@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CNN Stock Prediction</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='deep-learning.css') }}"
+    />
+  </head>
+  <body>
+    <header class="navbar">
+      <nav>
+        <ul>
+          <li><a href="/cnn" class="active">CNN</a></li>
+          <li><a href="/lstm">LSTM</a></li>
+          <li><a href="/ml">Machine Learning Models</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h1>CNN Stock Price Prediction</h1>
+      <p style="text-align: center">
+        Use the options below to configure the model.
+      </p>
+
+      <div class="slider-section" style="text-align: center; margin-top: 30px">
+        <!-- ✅ Dropdown for symbol -->
+        <label for="symbolSelector">Select Stock:</label>
+        <select id="symbolSelector">
+          <option value="AAPL">AAPL</option>
+          <option value="NVDA">NVDA</option>
+          <option value="SP500">SP500</option>
+        </select>
+
+        <br /><br />
+
+        <!-- Slider -->
+        <label for="trainSlider">Training Data Percentage:</label>
+        <input
+          type="range"
+          id="trainSlider"
+          min="10"
+          max="95"
+          value="80"
+          step="1"
+          oninput="updateValue()"
+        />
+        <div
+          class="slider-value"
+          id="sliderValue"
+          style="
+            font-size: 18px;
+            font-weight: bold;
+            color: #ef8354;
+            margin-top: 10px;
+          "
+        >
+          80% training / 20% prediction
+        </div>
+
+        <button onclick="sendTrainingSplit()">Apply & Run CNN</button>
+      </div>
+
+      <canvas
+        id="cnnChart"
+        width="800"
+        height="400"
+        style="margin-top: 40px"
+      ></canvas>
+
+      <div id="cnn-scores" style="text-align: center; margin-top: 20px">
+        <h3>Evaluation Metrics</h3>
+        <p>MAE: <span id="mae">Loading...</span></p>
+        <p>RMSE: <span id="rmse">Loading...</span></p>
+      </div>
+    </main>
+
+    <!-- Chart dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+
+    <!-- ✅ Inline CNN chart logic -->
+    <script>
+      function updateValue() {
+        const value = document.getElementById("trainSlider").value;
+        document.getElementById(
+          "sliderValue"
+        ).innerText = `${value}% training / ${100 - value}% prediction`;
+      }
+
+      function sendTrainingSplit() {
+        const split = document.getElementById("trainSlider").value;
+        const symbol = document.getElementById("symbolSelector").value;
+
+        fetch("/train-cnn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ split: split, symbol: symbol }),
+        })
+          .then((res) => res.json())
+          .then(() => {
+            alert(`CNN trained with ${split}% data for ${symbol}`);
+            loadChart(symbol); // ✅ Reload chart
+          });
+      }
+
+      function loadChart(symbol = "AAPL") {
+        fetch(`/api/cnn-predictions/${symbol}`)
+          .then((res) => res.json())
+          .then((data) => {
+            const ctx = document.getElementById("cnnChart").getContext("2d");
+            if (window.cnnChart) {
+              window.cnnChart.destroy(); // ✅ Prevent overlap
+            }
+
+            window.cnnChart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: data.Date,
+                datasets: [
+                  {
+                    label: "Actual Price",
+                    data: data.Date.map((date, i) => ({
+                      x: date,
+                      y: data.Actual[i],
+                    })),
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                  },
+                  {
+                    label: "Predicted Price",
+                    data: data.Date.map((date, i) => ({
+                      x: date,
+                      y: data.Predicted[i],
+                    })),
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  x: {
+                    type: "time",
+                    time: {
+                      unit: "month",
+                      tooltipFormat: "MMM yyyy",
+                      displayFormats: {
+                        month: "yyyy-MM",
+                      },
+                    },
+                    title: {
+                      display: true,
+                      text: "Date",
+                      color: "#ffffff",
+                    },
+                    ticks: { color: "#ffffff" },
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  },
+                  y: {
+                    title: {
+                      display: true,
+                      text: "Stock Price",
+                      color: "#ffffff",
+                    },
+                    ticks: { color: "#ffffff" },
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  },
+                },
+                plugins: {
+                  legend: {
+                    labels: {
+                      color: "#ffffff",
+                      font: { size: 14 },
+                    },
+                  },
+                },
+              },
+            });
+          });
+
+        // ✅ Load scores
+        fetch(`/api/cnn-scores/${symbol}`)
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("mae").innerText = data.mae;
+            document.getElementById("rmse").innerText = data.rmse;
+          });
+      }
+
+      // ✅ Load default AAPL chart on page load
+      document.addEventListener("DOMContentLoaded", () => {
+        loadChart("AAPL");
+      });
+    </script>
+  </body>
+</html>

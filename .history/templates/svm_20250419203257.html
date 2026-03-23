@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVM Model Control Panel</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='deep-learning.css') }}"
+    />
+  </head>
+
+  <body>
+    <header class="navbar">
+      <nav>
+        <ul>
+          <li><a href="/deep-learning">Deep Learning Models</a></li>
+          <li><a href="/ml">Machine Learning Models</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h1>SVM Model Control Panel</h1>
+      <p style="text-align: center">
+        Adjust the training split and stock below:
+      </p>
+
+      <div style="text-align: center; margin-top: 30px">
+        <label for="symbolSelector">Select Stock:</label>
+        <select id="symbolSelector">
+          <option value="AAPL">AAPL</option>
+          <option value="NVDA">NVDA</option>
+          <option value="SP500">SP500</option>
+        </select>
+
+        <br /><br />
+
+        <label for="trainSlider">Training Data Percentage:</label>
+        <input
+          type="range"
+          id="trainSlider"
+          min="50"
+          max="95"
+          value="80"
+          step="1"
+          oninput="updateValue()"
+        />
+        <div
+          id="sliderValue"
+          style="
+            font-size: 18px;
+            font-weight: bold;
+            color: #ef8354;
+            margin-top: 10px;
+          "
+        >
+          80% training / 20% prediction
+        </div>
+
+        <div class="button-container" style="margin-top: 20px">
+          <button onclick="trainModel()">Apply & Run Model</button>
+        </div>
+      </div>
+
+      <canvas
+        id="svmChart"
+        width="800"
+        height="400"
+        style="margin-top: 40px"
+      ></canvas>
+
+      <div style="text-align: center; margin-top: 20px">
+        <h3>Evaluation Metrics</h3>
+        <p>MAE: <span id="mae">N/A</span></p>
+        <p>RMSE: <span id="rmse">N/A</span></p>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon"></script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deep Learning Models</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='deep-learning.css') }}"
+    />
+  </head>
+  <body>
+    <header class="navbar">
+      <nav>
+        <ul>
+          <li>
+            <a href="deep-learning" class="active">Deep Learning Models</a>
+          </li>
+          <li><a href="ml">Machine Learning Models</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h1>Deep Learning Models</h1>
+        <p>
+          Discover the power of neural networks and advanced deep learning
+          techniques for stock price prediction. Choose a model below to see
+          more details:
+        </p>
+        <div class="button-container">
+          <button onclick="window.location.href = '/cnn'">
+            Convolutional Neural Networks (CNN)
+          </button>
+          <button onclick="window.location.href = '/lstm'">
+            Long Short-Term Memory (LSTM)
+          </button>
+        </div>
+      </section>
+      <section>
+        <h2>Key Insights</h2>
+        <p>Analyze model performance based on:</p>
+        <ul>
+          <li>Training Time</li>
+          <li>Validation Accuracy</li>
+          <li>Overfitting Tendencies</li>
+          <li>Model Scalability</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

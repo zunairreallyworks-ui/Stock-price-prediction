@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Machine Learning Models</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='ml.css') }}" />
+  </head>
+  <body>
+    <header class="navbar">
+      <nav>
+        <ul>
+          <li><a href="deep-learning">Deep Learning Models</a></li>
+          <li><a href="ml.html" class="active">Machine Learning Models</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h1>Machine Learning Models</h1>
+        <p>
+          Explore various algorithms and techniques used in stock price
+          prediction. Click on a model below to view more details and visualize
+          its results:
+        </p>
+        <div class="button-container">
+          <button
+            onclick="window.location.href='{{ url_for('linear_regression_page') }}';"
+          >
+            Linear Regression
+          </button>
+
+          <button
+            onclick="window.location.href='{{ url_for('random_forest_page') }}';"
+          >
+            Random Forests
+          </button>
+
+          <button onclick="window.location.href='{{ url_for('svm_page') }}';">
+            Support Vector Machines
+          </button>
+        </div>
+      </section>
+      <section>
+        <h2>Performance Metrics</h2>
+        <p>Compare models using the following metrics:</p>
+        <ul>
+          <li>Mean Squared Error (MSE)</li>
+          <li>Mean Absolute Error (MAE)</li>
+          <li>R-squared</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

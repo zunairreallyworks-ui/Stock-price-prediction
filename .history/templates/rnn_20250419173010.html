@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recurrent Neural Network (RNN)</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='deep-learning.css') }}"
+    />
+  </head>
+
+  <body>
+    <header class="navbar">
+      <nav>
+        <ul>
+          <li><a href="/deep-learning">Deep Learning Models</a></li>
+          <li><a href="/ml">Machine Learning Models</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h1>RNN Model Control Panel</h1>
+      <p style="text-align: center">
+        Adjust training split and select a stock symbol.
+      </p>
+
+      <div style="text-align: center; margin-top: 30px">
+        <label for="symbolSelector">Select Stock:</label>
+        <select id="symbolSelector">
+          <option value="AAPL">AAPL</option>
+          <option value="NVDA">NVDA</option>
+          <option value="SP500">SP500</option>
+        </select>
+
+        <br /><br />
+
+        <label for="trainSlider">Training Data Percentage:</label>
+        <input
+          type="range"
+          id="trainSlider"
+          min="10"
+          max="95"
+          value="80"
+          step="1"
+          oninput="updateValue()"
+        />
+        <span id="sliderValue">80% training / 20% prediction</span>
+
+        <div class="button-container" style="margin-top: 20px">
+          <button onclick="sendTrainingSplit()">Apply & Run Model</button>
+        </div>
+      </div>
+
+      <div
+        style="width: 90%; max-width: 900px; height: 500px; margin: 40px auto"
+      >
+        <canvas id="rnnChart"></canvas>
+      </div>
+
+      <div id="rnn-scores" style="text-align: center; margin-top: 20px">
+        <h3>Evaluation Metrics</h3>
+        <p>MAE: <span id="mae">Loading...</span></p>
+        <p>RMSE: <span id="rmse">Loading...</span></p>
+      </div>
+    </main>
+
+    <!-- Chart.js and Adapters -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.0"></script>
+
+    <script>
+      console.log("Chart.js version:", window.Chart?.version);
+
+      function updateValue() {
+        const value = document.getElementById("trainSlider").value;
+        document.getElementById(
+          "sliderValue"
+        ).innerText = `${value}% training / ${100 - value}% prediction`;
+      }
+
+      function trainModel() {
+        const split = document.getElementById("trainSlider").value;
+        const symbol = document.getElementById("symbolSelector").value;
+
+        persistSelections(); // ✅ Save choice
+
+        Chart.getChart("rnnChart")?.destroy(); // ✅ Destroy old chart before new one
+
+        fetch("/train-rnn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ split, symbol }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            updateChart(data); // ✅ Draw new chart
+          })
+          .catch((err) => {
+            console.error("Training error:", err);
+            alert("Something went wrong while training.");
+          });
+      }
+
+      function loadRNNChart(symbol = "AAPL") {
+        fetch(`/api/rnn-predictions/${symbol}`)
+          .then((res) => res.json())
+          .then((data) => {
+            const ctx = document.getElementById("rnnChart").getContext("2d");
+
+            window.rnnChart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: data.Date,
+                datasets: [
+                  {
+                    label: "Actual Price",
+                    data: data.Date.map((d, i) => ({
+                      x: d,
+                      y: data.Actual[i],
+                    })),
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    tension: 0.1,
+                  },
+                  {
+                    label: "Predicted Price",
+                    data: data.Date.map((d, i) => ({
+                      x: d,
+                      y: data.Predicted[i],
+                    })),
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    pointRadius: 2,
+                    borderWidth: 2,
+                    tension: 0.1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  x: {
+                    type: "time",
+                    time: {
+                      unit: "month",
+                      tooltipFormat: "MMM yyyy",
+                      displayFormats: { month: "MMM yyyy" },
+                    },
+                    ticks: { color: "#ffffff" },
+                    title: { display: true, text: "Date", color: "#ffffff" },
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  },
+                  y: {
+                    ticks: { color: "#ffffff" },
+                    title: {
+                      display: true,
+                      text: "Stock Price",
+                      color: "#ffffff",
+                    },
+                    grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  },
+                },
+                plugins: {
+                  legend: {
+                    labels: {
+                      color: "#ffffff",
+                      font: { size: 14 },
+                      usePointStyle: true,
+                    },
+                  },
+                },
+              },
+            });
+          });
+
+        fetch(`/api/rnn-scores/${symbol}`)
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("mae").innerText = data.mae || "N/A";
+            document.getElementById("rmse").innerText = data.rmse || "N/A";
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const savedSymbol =
+          localStorage.getItem("rnn_selected_symbol") || "AAPL";
+        const savedSplit = localStorage.getItem("rnn_selected_split") || "80";
+
+        document.getElementById("symbolSelector").value = savedSymbol;
+        document.getElementById("trainSlider").value = savedSplit;
+        document.getElementById(
+          "sliderValue"
+        ).innerText = `${savedSplit}% training / ${
+          100 - savedSplit
+        }% prediction`;
+
+        loadRNNChart(savedSymbol);
+
+        document
+          .getElementById("trainSlider")
+          .addEventListener("change", sendTrainingSplit);
+        document
+          .getElementById("symbolSelector")
+          .addEventListener("change", sendTrainingSplit);
+      });
+    </script>
+  </body>
+</html>
